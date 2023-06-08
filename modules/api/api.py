@@ -65,6 +65,7 @@ def setUpscalers(req: dict):
     return reqDict
 
 def decode_to_image(encoding):
+    print(encoding)
     image = None
     try:
         if encoding.startswith("http://") or encoding.startswith("https://"):
@@ -83,6 +84,7 @@ def decode_to_image(encoding):
             if encoding.startswith("data:image/"):
                 encoding = encoding.split(";")[1].split(",")[1]
             image = Image.open(BytesIO(base64.b64decode(encoding)))
+        print(image)
         return image
     except Exception as err:
         return None
