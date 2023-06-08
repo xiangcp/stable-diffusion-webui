@@ -38,6 +38,7 @@ import uuid
 import json
 import requests
 from datetime import date
+from notifier import SnsWrapper
 
 def upscaler_to_index(name: str):
     try:
@@ -234,6 +235,7 @@ class Api:
                 user, password = auth.split(":")
                 self.credentials[user] = password
 
+        self.notifier = SnsWrapper()
         self.router = APIRouter()
         self.app = app
         self.queue_lock = queue_lock
@@ -268,7 +270,7 @@ class Api:
         self.add_api_route("/sdapi/v1/unload-checkpoint", self.unloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=ScriptsList)
-        self.add_api_route("/invocations", self.invocations, methods=["POST"], response_model=Union[TextToImageResponse, ImageToImageResponse, ExtrasSingleImageResponse, ExtrasBatchImagesResponse, InvocationsErrorResponse, InterrogateResponse])
+        self.add_api_route("/invocations", self.invocationsWrapper, methods=["POST"], response_model=Union[TextToImageResponse, ImageToImageResponse, ExtrasSingleImageResponse, ExtrasBatchImagesResponse, InvocationsErrorResponse, InterrogateResponse])
         self.add_api_route("/ping", self.ping, methods=["GET"], response_model=PingResponse)
 
         self.default_script_arg_txt2img = []
@@ -923,6 +925,14 @@ class Api:
                 'parameters': parameters,
                 'info': ''
             }
+        
+    def invocationsWrapper(self, req: InvocationsRequest):
+        response = self.invocations(req)
+        self.notify(response)
+        return response
+
+    def notify(self, message):
+        self.notifier.publish_message(self.notifier.sns_topic, message)
 
     def ping(self):
         return {'status': 'Healthy'}
