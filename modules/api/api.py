@@ -85,7 +85,7 @@ def decode_to_image(encoding):
             image = Image.open(BytesIO(base64.b64decode(encoding)))
         return image
     except Exception as err:
-        raise HTTPException(status_code=500, detail="Invalid encoded image")
+        return None
 
 def decode_base64_to_image(encoding):
     return decode_to_image(encoding)
