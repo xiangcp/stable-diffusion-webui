@@ -38,7 +38,7 @@ import uuid
 import json
 import requests
 from datetime import date
-from notifier import SnsWrapper
+from modules.api.notifier import *
 
 def upscaler_to_index(name: str):
     try:
