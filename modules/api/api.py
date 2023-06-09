@@ -932,7 +932,8 @@ class Api:
         return response
 
     def notify(self, message):
-        self.notifier.publish_message(self.notifier.sns_topic, message)
+        msgstr = json.dumps(message)
+        self.notifier.publish_message(self.notifier.sns_topic, msgstr)
 
     def ping(self):
         return {'status': 'Healthy'}
