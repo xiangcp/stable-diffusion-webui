@@ -928,11 +928,15 @@ class Api:
             }
         
     def invocationsWrapper(self, req: InvocationsRequest):
+        print("begin invocations")
         response = self.invocations(req)
+        print("after invocations")
         self.notify(response)
+        print("after notify")
         return response
 
     def notify(self, message):
+        print("begin notify")
         msgstr = json.dumps(message)
         self.notifier.publish_message(self.notifier.sns_topic, msgstr)
 
