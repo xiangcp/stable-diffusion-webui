@@ -239,6 +239,7 @@ class Api:
         self.router = APIRouter()
         self.app = app
         self.queue_lock = queue_lock
+        self.invocations_lock = Lock()
         api_middleware(self.app)
         self.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=TextToImageResponse)
         self.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=ImageToImageResponse)
@@ -929,7 +930,8 @@ class Api:
         
     def invocationsWrapper(self, req: InvocationsRequest):
         print("begin invocations")
-        response = self.invocations(req)
+        with self.invocations_lock:
+            response = self.invocations(req)
         print("after invocations")
         self.notify(response)
         print("after notify")
