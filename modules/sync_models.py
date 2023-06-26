@@ -2,6 +2,7 @@ import os,threading,psutil,json,time
 import boto3
 import modules.shared as shared
 import modules.sd_models as sd_models
+import modules.sd_vae as sd_vae
 import modules.script_callbacks as script_callbacks
 from modules.shared import syncLock
 from modules.call_queue import queue_lock
@@ -30,6 +31,8 @@ def check_space_s3_download(s3_client, bucket_name, s3_folder, local_folder, fil
                 shared.cn_models_Ref.add_models_ref('{0} [{1}]'.format(os.path.splitext(file)[0], hash))
             elif mode == 'lora':
                 shared.lora_models_Ref.add_models_ref('{0} [{1}]'.format(os.path.splitext(file)[0], hash))
+            elif mode == 'vae':
+                shared.vae_models_Ref.add_models_ref('{0} [{1}]'.format(os.path.splitext(file)[0], hash))
             print(f'download_file success:from {bucket_name}/{src} to {dist}')
         except Exception as e:
             print(f'download_file error: from {bucket_name}/{src} to {dist}')
@@ -51,6 +54,8 @@ def free_local_disk(local_folder, size,mode):
         models_Ref = shared.cn_models_Ref
     elif mode == 'lora':
         models_Ref = shared.lora_models_Ref
+    elif mode == 'vae':
+        models_Ref = shared.vae_models_Ref
     model_name,ref_cnt  = models_Ref.get_least_ref_model()
     print (f'shared.{mode}_models_Ref:{models_Ref.get_models_ref_dict()} -- model_name:{model_name}')
     if model_name and ref_cnt:
@@ -124,6 +129,8 @@ def initial_s3_download(s3_client, s3_folder, local_folder,cache_dir,mode):
     for obj in s3_objects:
         etag = obj['ETag'].strip('"').strip("'")   
         size = obj['Size']/(1024**3)
+        if size == 0:
+            continue
         filename = obj['Key'].replace(s3_folder, '').lstrip('/')
         tmp_s3_files[filename] = [etag,size]
     
@@ -153,6 +160,8 @@ def sync_s3_folder(local_folder, cache_dir,mode):
             s3_folder = shared.s3_folder_cn 
         elif mode == 'lora':
             s3_folder = shared.s3_folder_lora
+        elif mode == 'vae':
+            s3_folder = shared.s3_folder_vae
         else: 
             s3_folder = ''
         # Check and Create tmp folders 
@@ -172,6 +181,8 @@ def sync_s3_folder(local_folder, cache_dir,mode):
         for obj in s3_objects:
             etag = obj['ETag'].strip('"').strip("'")   
             size = obj['Size']/(1024**3)
+            if size == 0:
+                continue
             key = obj['Key'].replace(s3_folder, '').lstrip('/')
             s3_files[key] = [etag,size]
 
@@ -221,7 +232,10 @@ def sync_s3_folder(local_folder, cache_dir,mode):
                 with queue_lock:
                     script_callbacks.update_cn_models_callback()
             elif mode == 'lora':
-                print('Nothing To do')
+                print('update lora')
+            elif mode == 'vae':
+                print('refresh_vae_list')
+                sd_vae.refresh_vae_list()
 
     # Create a thread function to keep syncing with the S3 folder
     def sync_thread(mode):  

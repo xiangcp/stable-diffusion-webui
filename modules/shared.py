@@ -24,6 +24,7 @@ models_s3_bucket = None
 s3_folder_sd = None
 s3_folder_cn = None
 s3_folder_lora = None
+s3_folder_vae = None
 syncLock = threading.Lock()
 tmp_models_dir = '/tmp/models'
 tmp_cache_dir = '/tmp/model_sync_cache'
@@ -67,6 +68,7 @@ class ModelsRef:
 sd_models_Ref = ModelsRef()
 cn_models_Ref = ModelsRef()
 lora_models_Ref = ModelsRef()
+vae_models_Ref = ModelsRef()
 
 parser = cmd_args.parser
 
